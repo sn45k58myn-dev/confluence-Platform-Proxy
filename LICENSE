@@ -1,0 +1,8 @@
+SPDX-License-Identifier: AGPL-3.0-or-later
+
+Repository metadata and packaging scripts are licensed under the GNU Affero
+General Public License, version 3 or (at your option) any later version. See
+https://www.gnu.org/licenses/agpl-3.0.txt for the complete terms.
+
+Each proxy payload retains the licenses and third-party notices shipped inside
+that release.
