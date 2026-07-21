@@ -1,4 +1,7 @@
+__pycache__/
+*.py[cod]
+
+# Release payloads are local staging output, never source-controlled.
+dist/
 payload/*
 !payload/README.md
-dist/
-tmp/
