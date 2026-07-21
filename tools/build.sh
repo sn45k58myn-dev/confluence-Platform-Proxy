@@ -27,6 +27,11 @@ tar --sort=name --mtime="@$source_date_epoch" --owner=0 --group=0 --numeric-owne
     --use-compress-program='gzip -n' --create --file "$temporary_archive" --directory "$payload" .
 tar -tzf "$temporary_archive" >/dev/null
 mv -f "$temporary_archive" "$archive"
+if ! python3 "$(dirname "$0")/verify-archive.py" "$archive"; then
+    rm -f "$archive"
+    echo "Packaged proxy archive failed final validation" >&2
+    exit 1
+fi
 sha256sum "$archive" | awk '{ print $1 "  proxy.tar.gz" }' > "$output_dir/hashes.sha256"
 
 echo "Created $archive and $output_dir/hashes.sha256"
