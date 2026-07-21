@@ -21,5 +21,21 @@ first="$(sha256sum "$workdir/first/proxy.tar.gz" | cut -d' ' -f1)"
 second="$(sha256sum "$workdir/second/proxy.tar.gz" | cut -d' ' -f1)"
 [[ "$first" == "$second" ]] || { echo "Proxy package is not reproducible" >&2; exit 1; }
 (cd "$workdir/first" && sha256sum --check --strict hashes.sha256)
+python3 "$project_root/tools/verify-archive.py" "$workdir/first/proxy.tar.gz"
+
+python3 - "$workdir/unsafe.tar.gz" <<'PY'
+import io
+import sys
+import tarfile
+
+with tarfile.open(sys.argv[1], "w:gz") as archive:
+    member = tarfile.TarInfo("../escape")
+    member.size = 1
+    archive.addfile(member, io.BytesIO(b"x"))
+PY
+if python3 "$project_root/tools/verify-archive.py" "$workdir/unsafe.tar.gz" >/dev/null 2>&1; then
+    echo "Unsafe archive unexpectedly passed validation" >&2
+    exit 1
+fi
 
 echo "Proxy packager is deterministic"
