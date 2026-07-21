@@ -22,7 +22,8 @@ fi
 mkdir -p "$output_dir"
 archive="$output_dir/proxy.tar.gz"
 temporary_archive="$(mktemp "$output_dir/.proxy.tar.gz.XXXXXX")"
-trap 'rm -f "${temporary_archive:-}"' EXIT
+temporary_manifest=""
+trap 'rm -f "${temporary_archive:-}" "${temporary_manifest:-}"' EXIT
 tar --sort=name --mtime="@$source_date_epoch" --owner=0 --group=0 --numeric-owner \
     --use-compress-program='gzip -n' --create --file "$temporary_archive" --directory "$payload" .
 tar -tzf "$temporary_archive" >/dev/null
@@ -32,6 +33,9 @@ if ! python3 "$(dirname "$0")/verify-archive.py" "$archive"; then
     echo "Packaged proxy archive failed final validation" >&2
     exit 1
 fi
-sha256sum "$archive" | awk '{ print $1 "  proxy.tar.gz" }' > "$output_dir/hashes.sha256"
+temporary_manifest="$(mktemp "$output_dir/.hashes.sha256.XXXXXX")"
+sha256sum "$archive" | awk '{ print $1 "  proxy.tar.gz" }' > "$temporary_manifest"
+mv -f "$temporary_manifest" "$output_dir/hashes.sha256"
+temporary_manifest=""
 
 echo "Created $archive and $output_dir/hashes.sha256"
