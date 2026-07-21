@@ -3,10 +3,12 @@
 
 from __future__ import annotations
 
+import json
 import re
 import stat
 import sys
 import tarfile
+import urllib.parse
 from pathlib import Path, PurePosixPath
 
 
@@ -22,6 +24,8 @@ REQUIRED_FILES = {
 REQUIRED_DIRECTORIES = {"LICENSES", "bin/nginx/conf/servers"}
 FORBIDDEN_BASENAMES = {"config.ini", "id_rsa", "id_ed25519", "server.key"}
 FORBIDDEN_SUFFIXES = (".key", ".pem", ".p12", ".pfx")
+MANIFEST_KEYS = {"schema_version", "target", "components"}
+COMPONENT_KEYS = {"name", "version", "source", "license", "sha256"}
 
 
 def fail(message: str) -> None:
@@ -49,6 +53,7 @@ def safe_path(value: str, *, base: PurePosixPath = PurePosixPath(".")) -> str:
 
 
 def verify(path: Path) -> None:
+    manifest_bytes: bytes | None = None
     with tarfile.open(path, "r:gz") as archive:
         members = archive.getmembers()
         if not members or len(members) > MAX_MEMBERS:
@@ -91,6 +96,10 @@ def verify(path: Path) -> None:
                 target = safe_path(member.linkname)
                 if target not in member_paths:
                     fail(f"Archive hard link target is missing: {member.name}")
+        manifest_member = by_path.get("runtime-manifest.json")
+        if manifest_member is not None and manifest_member.isfile():
+            stream = archive.extractfile(manifest_member)
+            manifest_bytes = stream.read() if stream is not None else None
 
     if len(mtimes) != 1:
         fail("Archive members do not share one deterministic timestamp")
@@ -104,9 +113,49 @@ def verify(path: Path) -> None:
             fail(f"Archive is missing required directory: {required}")
     if not any(name.startswith("LICENSES/") and member.isfile() for name, member in by_path.items()):
         fail("Proxy license inventory is empty")
+    if manifest_bytes is None:
+        fail("Proxy runtime provenance manifest cannot be read")
+    verify_manifest(
+        manifest_bytes,
+        {PurePosixPath(name).name for name, member in by_path.items() if name.startswith("LICENSES/") and member.isfile()},
+    )
     service = by_path["service"]
     if stat.S_IMODE(service.mode) not in (0o750, 0o755):
         fail("Proxy service launcher has an unsafe mode")
+
+
+def verify_manifest(raw: bytes, license_names: set[str]) -> None:
+    try:
+        manifest = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        fail(f"Proxy runtime provenance manifest is invalid: {error}")
+    if not isinstance(manifest, dict) or set(manifest) != MANIFEST_KEYS:
+        fail("Proxy runtime provenance manifest schema is invalid")
+    if manifest.get("schema_version") != 1 or manifest.get("target") != "proxy":
+        fail("Proxy runtime provenance target is invalid")
+    components = manifest.get("components")
+    if not isinstance(components, list) or not components:
+        fail("Proxy runtime provenance component list is empty")
+    names: set[str] = set()
+    for component in components:
+        if not isinstance(component, dict) or set(component) != COMPONENT_KEYS:
+            fail("Proxy runtime provenance component schema is invalid")
+        name = component.get("name")
+        source = component.get("source")
+        parsed = urllib.parse.urlsplit(source) if isinstance(source, str) else None
+        if not isinstance(name, str) or not name.strip() or name in names:
+            fail("Proxy runtime provenance component name is missing or duplicated")
+        names.add(name)
+        if not isinstance(component.get("version"), str) or not component["version"].strip():
+            fail(f"Proxy runtime provenance component version is missing: {name}")
+        if not isinstance(component.get("license"), str) or not component["license"].strip():
+            fail(f"Proxy runtime provenance component license is missing: {name}")
+        if parsed is None or parsed.scheme != "https" or not parsed.netloc:
+            fail(f"Proxy runtime provenance component source is untrusted: {name}")
+        if not isinstance(component.get("sha256"), str) or re.fullmatch(r"[0-9a-f]{64}", component["sha256"]) is None:
+            fail(f"Proxy runtime provenance component digest is invalid: {name}")
+        if not any(candidate == name or candidate.startswith(f"{name}.") for candidate in license_names):
+            fail(f"Proxy runtime provenance component has no matching license notice: {name}")
 
 
 def main() -> None:
