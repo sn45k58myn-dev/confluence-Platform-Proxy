@@ -5,6 +5,16 @@ project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 workdir="$(mktemp -d)"
 trap 'rm -rf "$workdir"' EXIT
 
+for tag in 0.1.0 1.2.3-rc.1 1.2.3+build.7; do
+    bash "$project_root/tools/validate-tag.sh" "$tag"
+done
+for tag in v1.2.3 01.2.3 1.2 1.2.3.4 1.2.3-; do
+    if bash "$project_root/tools/validate-tag.sh" "$tag" >/dev/null 2>&1; then
+        echo "Invalid semantic release tag unexpectedly passed: $tag" >&2
+        exit 1
+    fi
+done
+
 payload="$workdir/payload"
 mkdir -p "$payload/LICENSES" "$payload/bin/nginx/conf/servers" "$payload/bin/nginx/conf/ports"
 printf '#!/usr/bin/env bash\nexit 0\n' > "$payload/service"

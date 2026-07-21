@@ -3,7 +3,7 @@ set -euo pipefail
 
 TAG="${1:-${GITHUB_REF_NAME:-}}"
 REPOSITORY="${2:-sn45k58myn-dev/confluence-Platform-Proxy}"
-[[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$ ]] || { echo "A semantic release tag is required" >&2; exit 1; }
+bash "$(dirname "$0")/validate-tag.sh" "$TAG"
 
 for command in gh python3 sha256sum; do
     command -v "$command" >/dev/null || { echo "Missing command: $command" >&2; exit 1; }
