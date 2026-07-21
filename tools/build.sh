@@ -9,6 +9,7 @@ source_date_epoch="${SOURCE_DATE_EPOCH:-$(git show -s --format=%ct HEAD 2>/dev/n
 [[ "$source_date_epoch" =~ ^[0-9]+$ ]] || { echo "SOURCE_DATE_EPOCH must be an integer" >&2; exit 1; }
 [[ -d "$payload/LICENSES" ]] || { echo "Missing proxy license inventory" >&2; exit 1; }
 find "$payload/LICENSES" -type f -print -quit | grep -q . || { echo "Proxy license inventory is empty" >&2; exit 1; }
+python3 "$(dirname "$0")/verify-source.py" "$payload"
 [[ -d "$payload/bin/nginx/conf/servers" ]] || { echo "Missing nginx server configuration directory" >&2; exit 1; }
 [[ -f "$payload/bin/nginx/conf/ports/http.conf" ]] || { echo "Missing HTTP port configuration" >&2; exit 1; }
 [[ -f "$payload/bin/nginx/conf/ports/https.conf" ]] || { echo "Missing HTTPS port configuration" >&2; exit 1; }

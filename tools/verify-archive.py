@@ -15,6 +15,7 @@ MAX_EXPANDED_BYTES = 2 * 1024 * 1024 * 1024
 MAX_MEMBER_BYTES = 512 * 1024 * 1024
 REQUIRED_FILES = {
     "service",
+    "runtime-manifest.json",
     "bin/nginx/conf/ports/http.conf",
     "bin/nginx/conf/ports/https.conf",
 }

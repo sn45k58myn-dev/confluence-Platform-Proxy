@@ -12,6 +12,21 @@ chmod 750 "$payload/service"
 printf 'listen 80;\n' > "$payload/bin/nginx/conf/ports/http.conf"
 printf 'listen 443 ssl;\n' > "$payload/bin/nginx/conf/ports/https.conf"
 printf 'Synthetic test fixture only.\n' > "$payload/LICENSES/fixture.txt"
+cat > "$payload/runtime-manifest.json" <<'JSON'
+{
+  "schema_version": 1,
+  "target": "proxy",
+  "components": [
+    {
+      "name": "fixture",
+      "version": "1.0.0",
+      "source": "https://example.invalid/fixture",
+      "license": "Test-only",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ]
+}
+JSON
 
 for output in first second; do
     mkdir -p "$workdir/$output"
