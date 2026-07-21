@@ -9,3 +9,7 @@ the `proxy.tar.gz` asset with `hashes.sha256`.
 
 No placeholder proxy release is published: the platform will fail closed until a
 reviewed payload satisfies [RELEASE_CONTRACT.md](RELEASE_CONTRACT.md).
+
+Every push exercises the deterministic packaging contract with a synthetic,
+credential-free fixture. Runtime payloads remain local and are published only
+after their origin and redistribution terms have been reviewed.
