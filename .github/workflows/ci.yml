@@ -13,5 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Validate release tooling syntax
+        run: |
+          bash -n tools/*.sh
+          python3 -m py_compile tools/*.py
       - name: Exercise deterministic proxy packaging
         run: bash tools/test-build.sh
