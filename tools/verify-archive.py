@@ -18,7 +18,7 @@ REQUIRED_FILES = {
     "bin/nginx/conf/ports/http.conf",
     "bin/nginx/conf/ports/https.conf",
 }
-REQUIRED_DIRECTORIES = {"bin/nginx/conf/servers"}
+REQUIRED_DIRECTORIES = {"LICENSES", "bin/nginx/conf/servers"}
 FORBIDDEN_BASENAMES = {"config.ini", "id_rsa", "id_ed25519", "server.key"}
 FORBIDDEN_SUFFIXES = (".key", ".pem", ".p12", ".pfx")
 
@@ -101,6 +101,8 @@ def verify(path: Path) -> None:
         member = by_path.get(required)
         if member is None or not member.isdir():
             fail(f"Archive is missing required directory: {required}")
+    if not any(name.startswith("LICENSES/") and member.isfile() for name, member in by_path.items()):
+        fail("Proxy license inventory is empty")
     service = by_path["service"]
     if stat.S_IMODE(service.mode) not in (0o750, 0o755):
         fail("Proxy service launcher has an unsafe mode")

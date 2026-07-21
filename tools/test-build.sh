@@ -6,11 +6,12 @@ workdir="$(mktemp -d)"
 trap 'rm -rf "$workdir"' EXIT
 
 payload="$workdir/payload"
-mkdir -p "$payload/bin/nginx/conf/servers" "$payload/bin/nginx/conf/ports"
+mkdir -p "$payload/LICENSES" "$payload/bin/nginx/conf/servers" "$payload/bin/nginx/conf/ports"
 printf '#!/usr/bin/env bash\nexit 0\n' > "$payload/service"
 chmod 750 "$payload/service"
 printf 'listen 80;\n' > "$payload/bin/nginx/conf/ports/http.conf"
 printf 'listen 443 ssl;\n' > "$payload/bin/nginx/conf/ports/https.conf"
+printf 'Synthetic test fixture only.\n' > "$payload/LICENSES/fixture.txt"
 
 for output in first second; do
     mkdir -p "$workdir/$output"

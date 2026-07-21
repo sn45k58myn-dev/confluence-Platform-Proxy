@@ -11,10 +11,13 @@ After extraction into `/home/confluencetv`, the archive must provide:
 - `bin/nginx/conf/servers/` — generated parent-server configurations
 - `bin/nginx/conf/ports/http.conf`
 - `bin/nginx/conf/ports/https.conf`
+- a non-empty `LICENSES/` directory containing notices for every redistributed
+  runtime component
 
 Archive paths must be relative and may not traverse outside the extraction root.
 The payload must not include credentials, private keys, generated server JSON,
 database configuration, or environment-specific certificates.
+The packager fails closed when the runtime license inventory is absent or empty.
 
 Tags use semantic versions. Release assets are immutable; publish a new patch tag
 to correct a package.

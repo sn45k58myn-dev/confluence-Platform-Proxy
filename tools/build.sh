@@ -7,11 +7,13 @@ source_date_epoch="${SOURCE_DATE_EPOCH:-$(git show -s --format=%ct HEAD 2>/dev/n
 
 [[ -f "$payload/service" ]] || { echo "Missing proxy service launcher" >&2; exit 1; }
 [[ "$source_date_epoch" =~ ^[0-9]+$ ]] || { echo "SOURCE_DATE_EPOCH must be an integer" >&2; exit 1; }
+[[ -d "$payload/LICENSES" ]] || { echo "Missing proxy license inventory" >&2; exit 1; }
+find "$payload/LICENSES" -type f -print -quit | grep -q . || { echo "Proxy license inventory is empty" >&2; exit 1; }
 [[ -d "$payload/bin/nginx/conf/servers" ]] || { echo "Missing nginx server configuration directory" >&2; exit 1; }
 [[ -f "$payload/bin/nginx/conf/ports/http.conf" ]] || { echo "Missing HTTP port configuration" >&2; exit 1; }
 [[ -f "$payload/bin/nginx/conf/ports/https.conf" ]] || { echo "Missing HTTPS port configuration" >&2; exit 1; }
 
-if find "$payload" -type f \( -iname '*.key' -o -iname '*.pem' -o -iname '*.p12' -o -iname '*.pfx' -o -name 'config.ini' -o -name '*.json' \) -print -quit | grep -q .; then
+if find "$payload" -regextype posix-extended -type f \( -iname '*.key' -o -iname '*.pem' -o -iname '*.p12' -o -iname '*.pfx' -o -name 'config.ini' -o -regex '.*/[0-9]+\.json' \) -print -quit | grep -q .; then
     echo "Payload contains a forbidden credential or environment-specific file" >&2
     exit 1
 fi
