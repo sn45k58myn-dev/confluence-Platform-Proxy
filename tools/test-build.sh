@@ -39,6 +39,26 @@ second="$(sha256sum "$workdir/second/proxy.tar.gz" | cut -d' ' -f1)"
 (cd "$workdir/first" && sha256sum --check --strict hashes.sha256)
 python3 "$project_root/tools/verify-archive.py" "$workdir/first/proxy.tar.gz"
 
+forged="$workdir/forged"
+cp -a "$payload" "$forged"
+sed -i 's/"target": "proxy"/"target": "main"/' "$forged/runtime-manifest.json"
+tar --sort=name --mtime='@1700000000' --owner=0 --group=0 --numeric-owner \
+    --use-compress-program='gzip -n' --create --file "$workdir/forged-target.tar.gz" --directory "$forged" .
+if python3 "$project_root/tools/verify-archive.py" "$workdir/forged-target.tar.gz" >/dev/null 2>&1; then
+    echo "Proxy archive with a mismatched provenance target unexpectedly passed validation" >&2
+    exit 1
+fi
+
+sed -i 's/"target": "main"/"target": "proxy"/' "$forged/runtime-manifest.json"
+rm "$forged/LICENSES/fixture.txt"
+printf 'Unrelated notice.\n' > "$forged/LICENSES/unrelated.txt"
+tar --sort=name --mtime='@1700000000' --owner=0 --group=0 --numeric-owner \
+    --use-compress-program='gzip -n' --create --file "$workdir/forged-license.tar.gz" --directory "$forged" .
+if python3 "$project_root/tools/verify-archive.py" "$workdir/forged-license.tar.gz" >/dev/null 2>&1; then
+    echo "Proxy archive without its component notice unexpectedly passed validation" >&2
+    exit 1
+fi
+
 python3 - "$workdir/unsafe.tar.gz" <<'PY'
 import io
 import sys
