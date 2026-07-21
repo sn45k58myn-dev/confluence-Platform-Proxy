@@ -46,6 +46,19 @@ done
 first="$(sha256sum "$workdir/first/proxy.tar.gz" | cut -d' ' -f1)"
 second="$(sha256sum "$workdir/second/proxy.tar.gz" | cut -d' ' -f1)"
 [[ "$first" == "$second" ]] || { echo "Proxy package is not reproducible" >&2; exit 1; }
+
+printf 'server_tokens off;\n' >> "$payload/bin/nginx/conf/ports/http.conf"
+SOURCE_DATE_EPOCH=1700000000 "$project_root/tools/build.sh" "$payload" "$workdir/first"
+replacement="$(sha256sum "$workdir/first/proxy.tar.gz" | cut -d' ' -f1)"
+[[ "$replacement" != "$first" ]] || { echo "Proxy replacement fixture did not change the archive" >&2; exit 1; }
+[[ "$(awk 'NF { count++ } END { print count + 0 }' "$workdir/first/hashes.sha256")" == 1 ]] || {
+    echo "Proxy checksum inventory contains stale entries" >&2
+    exit 1
+}
+if find "$workdir/first" -maxdepth 1 -type f \( -name '.hashes.*' -o -name '.proxy.tar.gz.*' \) -print -quit | grep -q .; then
+    echo "Proxy publication left a temporary file behind" >&2
+    exit 1
+fi
 (cd "$workdir/first" && sha256sum --check --strict hashes.sha256)
 python3 "$project_root/tools/verify-archive.py" "$workdir/first/proxy.tar.gz"
 
