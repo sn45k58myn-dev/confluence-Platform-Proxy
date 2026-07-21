@@ -54,6 +54,11 @@ def main() -> None:
             fail(f"Proxy runtime component source is untrusted: {name}")
         if not isinstance(component.get("sha256"), str) or re.fullmatch(r"[0-9a-f]{64}", component["sha256"]) is None:
             fail(f"Proxy runtime component digest is invalid: {name}")
+        if not any(
+            path.is_file() and (path.name == name or path.name.startswith(f"{name}."))
+            for path in (root / "LICENSES").rglob("*")
+        ):
+            fail(f"Proxy runtime component has no matching license notice: {name}")
     print("Proxy runtime provenance is complete")
 
 

@@ -16,6 +16,10 @@ After extraction into `/home/confluencetv`, the archive must provide:
 - a non-empty `LICENSES/` directory containing notices for every redistributed
   runtime component
 
+Every component declared in `runtime-manifest.json` must have a corresponding
+notice named `LICENSES/<name>` or `LICENSES/<name>.*`; unrelated generic notices
+do not satisfy the redistribution contract.
+
 Archive paths must be relative and may not traverse outside the extraction root.
 The payload must not include credentials, private keys, generated server JSON,
 database configuration, or environment-specific certificates.
