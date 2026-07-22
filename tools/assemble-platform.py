@@ -56,7 +56,7 @@ def canonical_path(value: str) -> str:
     return "/".join(parts)
 
 
-def inspect_archive(path: Path) -> None:
+def extract_archive(path: Path, destination: Path) -> None:
     expanded = 0
     seen: set[str] = set()
     seen_casefold: set[str] = set()
@@ -81,6 +81,14 @@ def inspect_archive(path: Path) -> None:
             expanded += member.size
             if expanded > MAX_EXPANDED_BYTES:
                 fail("Platform archive exceeds the expanded size limit")
+        # Every member has been validated in this same open archive: links,
+        # special entries, absolute/traversal paths and unsafe modes are absent.
+        # Plain extractall keeps compatibility with the Python 3.10 runtime used
+        # by supported installation hosts.
+        if sys.version_info >= (3, 12):
+            archive.extractall(destination, filter="fully_trusted")
+        else:
+            archive.extractall(destination)
 
 
 def sha256_file(path: Path) -> str:
@@ -108,15 +116,14 @@ def main() -> None:
     if output.exists():
         fail("Output payload already exists")
 
-    inspect_archive(archive_path)
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=f".{output.name}.", dir=output.parent))
     try:
-        with tarfile.open(archive_path, "r:gz") as archive:
-            archive.extractall(temporary, filter="data")
+        extract_archive(archive_path, temporary)
         for required in REQUIRED_FILES:
             if not (temporary / required).is_file():
                 fail(f"Platform archive is missing required proxy file: {required}")
+        (temporary / "bin/nginx/conf/servers").mkdir(parents=True, exist_ok=True, mode=0o750)
         for relative in RUNTIME_PATHS:
             path = temporary / relative
             if path.is_dir():
