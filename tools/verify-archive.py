@@ -20,10 +20,9 @@ REQUIRED_FILES = {
     "console.php",
     "bootstrap.php",
     "vendor/autoload.php",
-    "bin/php/bin/php",
-    "bin/php/lib/php.ini",
-    "bin/nginx/sbin/nginx",
-    "bin/nginx/conf/nginx.conf",
+    "bin/install/update_binaries.sh",
+    "bin/install/validate_tar.py",
+    "bin/install/validate_runtime_manifest.py",
     "runtime-manifest.json",
     "bin/nginx/conf/ports/http.conf",
     "bin/nginx/conf/ports/https.conf",
@@ -126,7 +125,7 @@ def verify(path: Path) -> None:
         manifest_bytes,
         {PurePosixPath(name).name for name, member in by_path.items() if name.startswith("LICENSES/") and member.isfile()},
     )
-    for executable in ("service", "bin/php/bin/php", "bin/nginx/sbin/nginx"):
+    for executable in ("service", "bin/install/update_binaries.sh"):
         member = by_path[executable]
         if stat.S_IMODE(member.mode) & stat.S_IXUSR == 0:
             fail(f"Proxy runtime file is not owner-executable: {executable}")

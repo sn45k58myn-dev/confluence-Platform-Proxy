@@ -16,18 +16,17 @@ for tag in v1.2.3 01.2.3 1.2 1.2.3.4 1.2.3-; do
 done
 
 payload="$workdir/payload"
-mkdir -p "$payload/LICENSES" "$payload/vendor" "$payload/bin/php/bin" "$payload/bin/php/lib" \
-    "$payload/bin/nginx/sbin" "$payload/bin/nginx/conf/servers" "$payload/bin/nginx/conf/ports"
+mkdir -p "$payload/LICENSES" "$payload/vendor" "$payload/bin/install" \
+    "$payload/bin/nginx/conf/servers" "$payload/bin/nginx/conf/ports"
 printf '#!/usr/bin/env bash\nexit 0\n' > "$payload/service"
 chmod 750 "$payload/service"
 printf '#!/usr/bin/env php\n<?php exit(0);\n' > "$payload/console.php"
 printf '<?php // synthetic bootstrap\n' > "$payload/bootstrap.php"
 printf '<?php // synthetic autoloader\n' > "$payload/vendor/autoload.php"
-printf '#!/usr/bin/env bash\nexit 0\n' > "$payload/bin/php/bin/php"
-printf '; synthetic php.ini\n' > "$payload/bin/php/lib/php.ini"
-printf '#!/usr/bin/env bash\nexit 0\n' > "$payload/bin/nginx/sbin/nginx"
-printf 'events {}\nhttp {}\n' > "$payload/bin/nginx/conf/nginx.conf"
-chmod 750 "$payload/bin/php/bin/php" "$payload/bin/nginx/sbin/nginx"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$payload/bin/install/update_binaries.sh"
+printf '#!/usr/bin/env python3\n' > "$payload/bin/install/validate_tar.py"
+printf '#!/usr/bin/env python3\n' > "$payload/bin/install/validate_runtime_manifest.py"
+chmod 750 "$payload/bin/install/update_binaries.sh"
 printf 'listen 80;\n' > "$payload/bin/nginx/conf/ports/http.conf"
 printf 'listen 443 ssl;\n' > "$payload/bin/nginx/conf/ports/https.conf"
 printf 'Synthetic test fixture only.\n' > "$payload/LICENSES/fixture.txt"
@@ -81,9 +80,9 @@ fi
 
 non_executable="$workdir/non-executable"
 cp -a "$payload" "$non_executable"
-chmod 640 "$non_executable/bin/php/bin/php"
+chmod 640 "$non_executable/bin/install/update_binaries.sh"
 if SOURCE_DATE_EPOCH=1700000000 "$project_root/tools/build.sh" "$non_executable" "$workdir/non-executable-output" >/dev/null 2>&1; then
-    echo "Proxy payload with a non-executable PHP runtime unexpectedly passed validation" >&2
+    echo "Proxy payload with a non-executable binary bootstrap unexpectedly passed validation" >&2
     exit 1
 fi
 

@@ -10,15 +10,14 @@ required_files=(
     console.php
     bootstrap.php
     vendor/autoload.php
-    bin/php/bin/php
-    bin/php/lib/php.ini
-    bin/nginx/sbin/nginx
-    bin/nginx/conf/nginx.conf
+    bin/install/update_binaries.sh
+    bin/install/validate_tar.py
+    bin/install/validate_runtime_manifest.py
 )
 for required in "${required_files[@]}"; do
     [[ -f "$payload/$required" ]] || { echo "Missing proxy runtime file: $required" >&2; exit 1; }
 done
-for executable in service bin/php/bin/php bin/nginx/sbin/nginx; do
+for executable in service bin/install/update_binaries.sh; do
     [[ -x "$payload/$executable" ]] || { echo "Proxy runtime file is not executable: $executable" >&2; exit 1; }
 done
 [[ "$source_date_epoch" =~ ^[0-9]+$ ]] || { echo "SOURCE_DATE_EPOCH must be an integer" >&2; exit 1; }
