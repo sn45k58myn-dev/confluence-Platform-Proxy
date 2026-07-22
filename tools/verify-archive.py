@@ -17,6 +17,13 @@ MAX_EXPANDED_BYTES = 2 * 1024 * 1024 * 1024
 MAX_MEMBER_BYTES = 512 * 1024 * 1024
 REQUIRED_FILES = {
     "service",
+    "console.php",
+    "bootstrap.php",
+    "vendor/autoload.php",
+    "bin/php/bin/php",
+    "bin/php/lib/php.ini",
+    "bin/nginx/sbin/nginx",
+    "bin/nginx/conf/nginx.conf",
     "runtime-manifest.json",
     "bin/nginx/conf/ports/http.conf",
     "bin/nginx/conf/ports/https.conf",
@@ -119,9 +126,10 @@ def verify(path: Path) -> None:
         manifest_bytes,
         {PurePosixPath(name).name for name, member in by_path.items() if name.startswith("LICENSES/") and member.isfile()},
     )
-    service = by_path["service"]
-    if stat.S_IMODE(service.mode) not in (0o750, 0o755):
-        fail("Proxy service launcher has an unsafe mode")
+    for executable in ("service", "bin/php/bin/php", "bin/nginx/sbin/nginx"):
+        member = by_path[executable]
+        if stat.S_IMODE(member.mode) & stat.S_IXUSR == 0:
+            fail(f"Proxy runtime file is not owner-executable: {executable}")
 
 
 def verify_manifest(raw: bytes, license_names: set[str]) -> None:

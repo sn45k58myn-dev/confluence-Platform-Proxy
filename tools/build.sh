@@ -5,7 +5,22 @@ payload="${1:-payload}"
 output_dir="${2:-dist}"
 source_date_epoch="${SOURCE_DATE_EPOCH:-$(git show -s --format=%ct HEAD 2>/dev/null || true)}"
 
-[[ -f "$payload/service" ]] || { echo "Missing proxy service launcher" >&2; exit 1; }
+required_files=(
+    service
+    console.php
+    bootstrap.php
+    vendor/autoload.php
+    bin/php/bin/php
+    bin/php/lib/php.ini
+    bin/nginx/sbin/nginx
+    bin/nginx/conf/nginx.conf
+)
+for required in "${required_files[@]}"; do
+    [[ -f "$payload/$required" ]] || { echo "Missing proxy runtime file: $required" >&2; exit 1; }
+done
+for executable in service bin/php/bin/php bin/nginx/sbin/nginx; do
+    [[ -x "$payload/$executable" ]] || { echo "Proxy runtime file is not executable: $executable" >&2; exit 1; }
+done
 [[ "$source_date_epoch" =~ ^[0-9]+$ ]] || { echo "SOURCE_DATE_EPOCH must be an integer" >&2; exit 1; }
 [[ -d "$payload/LICENSES" ]] || { echo "Missing proxy license inventory" >&2; exit 1; }
 find "$payload/LICENSES" -type f -print -quit | grep -q . || { echo "Proxy license inventory is empty" >&2; exit 1; }

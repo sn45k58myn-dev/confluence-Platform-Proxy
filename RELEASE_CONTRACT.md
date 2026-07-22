@@ -8,6 +8,10 @@ Every release must contain:
 After extraction into `/home/confluencetv`, the archive must provide:
 
 - `service` — the proxy service launcher
+- `console.php`, `bootstrap.php`, and `vendor/autoload.php` — the application
+  entry points required by the remote startup command
+- executable `bin/php/bin/php` and `bin/nginx/sbin/nginx` runtimes
+- `bin/php/lib/php.ini` and `bin/nginx/conf/nginx.conf` runtime configuration
 - `bin/nginx/conf/servers/` — generated parent-server configurations
 - `bin/nginx/conf/ports/http.conf`
 - `bin/nginx/conf/ports/https.conf`
@@ -24,7 +28,8 @@ Archive paths must be relative and may not traverse outside the extraction root.
 The payload must not include credentials, private keys, generated server JSON,
 database configuration, or environment-specific certificates.
 The packager fails closed when the runtime provenance manifest or license
-inventory is absent, incomplete, invalid, or empty.
+inventory is absent, incomplete, invalid, or empty. It also rejects payloads
+that cannot satisfy the Platform install flow's startup command.
 
 Tags use semantic versions. Release assets are immutable; publish a new patch tag
 to correct a package.
