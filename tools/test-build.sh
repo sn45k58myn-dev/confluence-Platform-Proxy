@@ -26,7 +26,6 @@ printf '<?php // synthetic autoloader\n' > "$payload/vendor/autoload.php"
 printf '#!/usr/bin/env bash\nexit 0\n' > "$payload/bin/install/update_binaries.sh"
 printf '#!/usr/bin/env python3\n' > "$payload/bin/install/validate_tar.py"
 printf '#!/usr/bin/env python3\n' > "$payload/bin/install/validate_runtime_manifest.py"
-chmod 750 "$payload/bin/install/update_binaries.sh"
 printf 'listen 80;\n' > "$payload/bin/nginx/conf/ports/http.conf"
 printf 'listen 443 ssl;\n' > "$payload/bin/nginx/conf/ports/https.conf"
 printf 'Synthetic test fixture only.\n' > "$payload/LICENSES/fixture.txt"
@@ -78,11 +77,11 @@ if SOURCE_DATE_EPOCH=1700000000 "$project_root/tools/build.sh" "$missing_runtime
     exit 1
 fi
 
-non_executable="$workdir/non-executable"
-cp -a "$payload" "$non_executable"
-chmod 640 "$non_executable/bin/install/update_binaries.sh"
-if SOURCE_DATE_EPOCH=1700000000 "$project_root/tools/build.sh" "$non_executable" "$workdir/non-executable-output" >/dev/null 2>&1; then
-    echo "Proxy payload with a non-executable binary bootstrap unexpectedly passed validation" >&2
+missing_updater="$workdir/missing-updater"
+cp -a "$payload" "$missing_updater"
+rm "$missing_updater/bin/install/update_binaries.sh"
+if SOURCE_DATE_EPOCH=1700000000 "$project_root/tools/build.sh" "$missing_updater" "$workdir/missing-updater-output" >/dev/null 2>&1; then
+    echo "Proxy payload without its binary bootstrap unexpectedly passed validation" >&2
     exit 1
 fi
 

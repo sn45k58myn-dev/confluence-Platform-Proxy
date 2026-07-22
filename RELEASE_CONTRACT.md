@@ -10,8 +10,9 @@ After extraction into `/home/confluencetv`, the archive must provide:
 - `service` — the proxy service launcher
 - `console.php`, `bootstrap.php`, and `vendor/autoload.php` — the application
   entry points required by the remote startup command
-- executable `bin/install/update_binaries.sh` plus its trusted
-  `validate_tar.py` and `validate_runtime_manifest.py` validators
+- `bin/install/update_binaries.sh` plus its trusted `validate_tar.py` and
+  `validate_runtime_manifest.py` validators (the installer invokes the updater
+  explicitly through `/bin/bash`)
 - `bin/nginx/conf/servers/` — generated parent-server configurations
 - `bin/nginx/conf/ports/http.conf`
 - `bin/nginx/conf/ports/https.conf`

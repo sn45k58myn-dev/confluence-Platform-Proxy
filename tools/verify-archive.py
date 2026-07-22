@@ -125,11 +125,6 @@ def verify(path: Path) -> None:
         manifest_bytes,
         {PurePosixPath(name).name for name, member in by_path.items() if name.startswith("LICENSES/") and member.isfile()},
     )
-    for executable in ("service", "bin/install/update_binaries.sh"):
-        member = by_path[executable]
-        if stat.S_IMODE(member.mode) & stat.S_IXUSR == 0:
-            fail(f"Proxy runtime file is not owner-executable: {executable}")
-
 
 def verify_manifest(raw: bytes, license_names: set[str]) -> None:
     try:

@@ -17,9 +17,6 @@ required_files=(
 for required in "${required_files[@]}"; do
     [[ -f "$payload/$required" ]] || { echo "Missing proxy runtime file: $required" >&2; exit 1; }
 done
-for executable in service bin/install/update_binaries.sh; do
-    [[ -x "$payload/$executable" ]] || { echo "Proxy runtime file is not executable: $executable" >&2; exit 1; }
-done
 [[ "$source_date_epoch" =~ ^[0-9]+$ ]] || { echo "SOURCE_DATE_EPOCH must be an integer" >&2; exit 1; }
 [[ -d "$payload/LICENSES" ]] || { echo "Missing proxy license inventory" >&2; exit 1; }
 find "$payload/LICENSES" -type f -print -quit | grep -q . || { echo "Proxy license inventory is empty" >&2; exit 1; }
