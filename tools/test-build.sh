@@ -16,13 +16,15 @@ for tag in v1.2.3 01.2.3 1.2 1.2.3.4 1.2.3-; do
 done
 
 payload="$workdir/payload"
-mkdir -p "$payload/LICENSES" "$payload/vendor" "$payload/bin/install" \
+mkdir -p "$payload/LICENSES" "$payload/vendor/composer/ca-bundle/res" "$payload/bin/install" \
     "$payload/bin/nginx/conf/servers" "$payload/bin/nginx/conf/ports"
 printf '#!/usr/bin/env bash\nexit 0\n' > "$payload/service"
 chmod 750 "$payload/service"
 printf '#!/usr/bin/env php\n<?php exit(0);\n' > "$payload/console.php"
 printf '<?php // synthetic bootstrap\n' > "$payload/bootstrap.php"
 printf '<?php // synthetic autoloader\n' > "$payload/vendor/autoload.php"
+printf '%s\n' '-----BEGIN CERTIFICATE-----' 'synthetic-public-ca' '-----END CERTIFICATE-----' \
+    > "$payload/vendor/composer/ca-bundle/res/cacert.pem"
 printf '#!/usr/bin/env bash\nexit 0\n' > "$payload/bin/install/update_binaries.sh"
 printf '#!/usr/bin/env python3\n' > "$payload/bin/install/validate_tar.py"
 printf '#!/usr/bin/env python3\n' > "$payload/bin/install/validate_runtime_manifest.py"
@@ -82,6 +84,15 @@ cp -a "$payload" "$missing_updater"
 rm "$missing_updater/bin/install/update_binaries.sh"
 if SOURCE_DATE_EPOCH=1700000000 "$project_root/tools/build.sh" "$missing_updater" "$workdir/missing-updater-output" >/dev/null 2>&1; then
     echo "Proxy payload without its binary bootstrap unexpectedly passed validation" >&2
+    exit 1
+fi
+
+private_key="$workdir/private-key"
+cp -a "$payload" "$private_key"
+printf '%s\n' '-----BEGIN PRIVATE KEY-----' 'synthetic-secret' '-----END PRIVATE KEY-----' \
+    > "$private_key/vendor/composer/ca-bundle/res/cacert.pem"
+if SOURCE_DATE_EPOCH=1700000000 "$project_root/tools/build.sh" "$private_key" "$workdir/private-key-output" >/dev/null 2>&1; then
+    echo "Proxy payload containing private key material unexpectedly passed validation" >&2
     exit 1
 fi
 

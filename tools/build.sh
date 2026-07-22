@@ -25,7 +25,7 @@ python3 "$(dirname "$0")/verify-source.py" "$payload"
 [[ -f "$payload/bin/nginx/conf/ports/http.conf" ]] || { echo "Missing HTTP port configuration" >&2; exit 1; }
 [[ -f "$payload/bin/nginx/conf/ports/https.conf" ]] || { echo "Missing HTTPS port configuration" >&2; exit 1; }
 
-if find "$payload" -regextype posix-extended -type f \( -iname '*.key' -o -iname '*.pem' -o -iname '*.p12' -o -iname '*.pfx' -o -name 'config.ini' -o -regex '.*/[0-9]+\.json' \) -print -quit | grep -q .; then
+if find "$payload" -regextype posix-extended -type f \( -iname '*.key' -o -iname '*.p12' -o -iname '*.pfx' -o -name 'config.ini' -o -regex '.*/[0-9]+\.json' \) -print -quit | grep -q .; then
     echo "Payload contains a forbidden credential or environment-specific file" >&2
     exit 1
 fi

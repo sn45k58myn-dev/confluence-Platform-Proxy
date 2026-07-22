@@ -29,7 +29,8 @@ REQUIRED_FILES = {
 }
 REQUIRED_DIRECTORIES = {"LICENSES", "bin/nginx/conf/servers"}
 FORBIDDEN_BASENAMES = {"config.ini", "id_rsa", "id_ed25519", "server.key"}
-FORBIDDEN_SUFFIXES = (".key", ".pem", ".p12", ".pfx")
+FORBIDDEN_SUFFIXES = (".key", ".p12", ".pfx")
+PRIVATE_KEY_MARKER = re.compile(br"-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----")
 MANIFEST_KEYS = {"schema_version", "target", "components"}
 COMPONENT_KEYS = {"name", "version", "source", "license", "sha256"}
 
@@ -90,6 +91,10 @@ def verify(path: Path) -> None:
                 fail(f"Archive member is world-writable: {member.name}")
             if member.size > MAX_MEMBER_BYTES:
                 fail(f"Archive member exceeds the size limit: {member.name}")
+            if member.isfile() and member.size <= 1024 * 1024:
+                stream = archive.extractfile(member)
+                if stream is None or PRIVATE_KEY_MARKER.search(stream.read()):
+                    fail(f"Archive contains private key material: {member.name}")
             expanded_bytes += member.size
             if expanded_bytes > MAX_EXPANDED_BYTES:
                 fail("Archive exceeds the expanded size limit")

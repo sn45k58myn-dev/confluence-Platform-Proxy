@@ -12,6 +12,7 @@ from pathlib import Path
 
 MANIFEST_KEYS = {"schema_version", "target", "components"}
 COMPONENT_KEYS = {"name", "version", "source", "license", "sha256"}
+PRIVATE_KEY_MARKER = re.compile(br"-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----")
 
 
 def fail(message: str) -> None:
@@ -22,6 +23,13 @@ def main() -> None:
     if len(sys.argv) != 2:
         fail("Usage: verify-source.py PAYLOAD_ROOT")
     root = Path(sys.argv[1])
+    for path in root.rglob("*"):
+        if path.is_file() and path.stat().st_size <= 1024 * 1024:
+            try:
+                if PRIVATE_KEY_MARKER.search(path.read_bytes()):
+                    fail(f"Proxy payload contains private key material: {path.relative_to(root)}")
+            except OSError as error:
+                fail(f"Proxy payload file cannot be inspected: {error}")
     manifest_path = root / "runtime-manifest.json"
     if not manifest_path.is_file():
         fail("Proxy payload has no runtime-manifest.json")
