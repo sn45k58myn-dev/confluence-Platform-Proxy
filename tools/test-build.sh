@@ -55,6 +55,27 @@ done
 first="$(sha256sum "$workdir/first/proxy.tar.gz" | cut -d' ' -f1)"
 second="$(sha256sum "$workdir/second/proxy.tar.gz" | cut -d' ' -f1)"
 [[ "$first" == "$second" ]] || { echo "Proxy package is not reproducible" >&2; exit 1; }
+bash "$project_root/tools/verify-local-release.sh" "$workdir/first"
+
+cp -a "$workdir/first" "$workdir/release-with-extra"
+printf 'unexpected\n' > "$workdir/release-with-extra/debug.txt"
+if bash "$project_root/tools/verify-local-release.sh" \
+    "$workdir/release-with-extra" >/dev/null 2>&1; then
+    echo "Proxy release with an unexpected asset passed local verification" >&2
+    exit 1
+fi
+
+cp -a "$workdir/first" "$workdir/release-with-duplicate-digest"
+cat "$workdir/release-with-duplicate-digest/hashes.sha256" \
+    >> "$workdir/release-with-duplicate-digest/hashes.sha256.copy"
+cat "$workdir/release-with-duplicate-digest/hashes.sha256.copy" \
+    >> "$workdir/release-with-duplicate-digest/hashes.sha256"
+rm "$workdir/release-with-duplicate-digest/hashes.sha256.copy"
+if bash "$project_root/tools/verify-local-release.sh" \
+    "$workdir/release-with-duplicate-digest" >/dev/null 2>&1; then
+    echo "Proxy release with a duplicate digest passed local verification" >&2
+    exit 1
+fi
 
 printf 'server_tokens off;\n' >> "$payload/bin/nginx/conf/ports/http.conf"
 SOURCE_DATE_EPOCH=1700000000 "$project_root/tools/build.sh" "$payload" "$workdir/first"
