@@ -31,3 +31,25 @@ installed from the separately verified Binaries release during provisioning.
 Every push exercises the deterministic packaging contract with a synthetic,
 credential-free fixture. Runtime payloads remain local and are published only
 after their origin and redistribution terms have been reviewed.
+
+## Publish a verified release
+
+Verify the assembled release directory before tagging:
+
+```bash
+tools/verify-local-release.sh dist
+git tag -a X.Y.Z -m "Confluence Platform Proxy X.Y.Z"
+git push origin X.Y.Z
+```
+
+Publish only through the guarded command:
+
+```bash
+tools/publish-release.sh X.Y.Z dist
+```
+
+The publisher requires a clean checkout whose pushed tag resolves to `HEAD`,
+revalidates the exact two-file release set, creates or updates only a draft,
+uploads and downloads the draft for verification, then publishes and verifies
+the immutable release again. Corrections to a published package require a new
+patch tag.

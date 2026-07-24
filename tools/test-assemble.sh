@@ -32,6 +32,18 @@ python3 "$project_root/tools/assemble-platform.py" \
 python3 "$project_root/tools/verify-source.py" "$workdir/payload"
 SOURCE_DATE_EPOCH=1700000000 "$project_root/tools/build.sh" "$workdir/payload" "$workdir/dist"
 
+for untrusted_source in \
+    "https://github.com/sn45k58myn-dev/confluence-Platform-Releases/releases/download/2.3.4/loadbalancer.tar.gz" \
+    "${source_url}?download=1" \
+    "${source_url}#asset"; do
+    if python3 "$project_root/tools/assemble-platform.py" \
+        "$workdir/loadbalancer.tar.gz" 2.3.5 "$untrusted_source" \
+        "$workdir/untrusted-output" >/dev/null 2>&1; then
+        echo "Untrusted or version-mismatched Platform source unexpectedly passed assembly" >&2
+        exit 1
+    fi
+done
+
 python3 - "$workdir/unsafe.tar.gz" <<'PY'
 import io
 import sys

@@ -11,6 +11,7 @@ permissions:
 jobs:
   package-contract:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Validate release tooling syntax
@@ -21,3 +22,7 @@ jobs:
         run: bash tools/test-build.sh
       - name: Exercise runtime-neutral Platform assembly
         run: bash tools/test-assemble.sh
+      - name: Verify guarded publication contract
+        run: |
+          python3 tools/test-publish-release.py
+          python3 tools/test-workflows.py
