@@ -18,9 +18,6 @@ from pathlib import Path, PurePosixPath
 MAX_MEMBERS = 100_000
 MAX_EXPANDED_BYTES = 4 * 1024 * 1024 * 1024
 SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
-SOURCE_PATH = re.compile(
-    r"^/sn45k58myn-dev/confluence-Platform-Releases/releases/download/[^/]+/loadbalancer\.tar\.gz$"
-)
 REQUIRED_FILES = (
     "LICENSE",
     "service",
@@ -111,7 +108,17 @@ def main() -> None:
         fail("Platform load-balancer archive is missing or empty")
     if SEMVER.fullmatch(version) is None:
         fail("Platform version is not semantic")
-    if parsed.scheme != "https" or parsed.netloc != "github.com" or SOURCE_PATH.fullmatch(parsed.path) is None:
+    expected_path = (
+        "/sn45k58myn-dev/confluence-Platform-Releases/releases/download/"
+        f"{version}/loadbalancer.tar.gz"
+    )
+    if (
+        parsed.scheme != "https"
+        or parsed.netloc != "github.com"
+        or urllib.parse.unquote(parsed.path) != expected_path
+        or parsed.query
+        or parsed.fragment
+    ):
         fail("Platform source URL is not a trusted release asset")
     if output.exists():
         fail("Output payload already exists")
