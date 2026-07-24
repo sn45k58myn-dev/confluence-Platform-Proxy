@@ -36,3 +36,8 @@ before it runs the startup command.
 
 Tags use semantic versions. Release assets are immutable; publish a new patch tag
 to correct a package.
+
+Publication uses `tools/publish-release.sh`. The command must verify the exact
+local set, upload only to a draft bound to the pushed source tag, verify the
+downloaded draft before publication, and verify the immutable published release
+again. Direct publication of unverified assets is outside this contract.
