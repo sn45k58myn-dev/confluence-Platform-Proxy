@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import shutil
 import stat
@@ -96,6 +97,19 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def remove_runtime_path(path: Path) -> None:
+    """Remove extracted runtime binaries even when archive modes are read-only."""
+    def retry_writable(function: object, filename: str, _error: object) -> None:
+        os.chmod(filename, stat.S_IRUSR | stat.S_IWUSR)
+        function(filename)  # type: ignore[operator]
+
+    if path.is_dir():
+        shutil.rmtree(path, onerror=retry_writable)
+    elif path.exists():
+        path.chmod(path.stat().st_mode | stat.S_IWUSR)
+        path.unlink()
+
+
 def main() -> None:
     if len(sys.argv) != 5:
         fail("Usage: assemble-platform.py LOADBALANCER_ARCHIVE VERSION SOURCE_URL OUTPUT_PAYLOAD")
@@ -132,11 +146,7 @@ def main() -> None:
                 fail(f"Platform archive is missing required proxy file: {required}")
         (temporary / "bin/nginx/conf/servers").mkdir(parents=True, exist_ok=True, mode=0o750)
         for relative in RUNTIME_PATHS:
-            path = temporary / relative
-            if path.is_dir():
-                shutil.rmtree(path)
-            elif path.exists():
-                path.unlink()
+            remove_runtime_path(temporary / relative)
         for path in temporary.rglob("*"):
             if path.is_file():
                 with path.open("rb") as stream:
